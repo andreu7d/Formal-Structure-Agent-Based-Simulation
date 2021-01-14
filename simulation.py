@@ -1,15 +1,9 @@
 from mesa import Agent, Model
 from mesa.time import RandomActivation
-from mesa.datacollection import DataCollector
-from mesa.batchrunner import BatchRunner
-from datetime import datetime
-
-import matplotlib.pyplot as plt
-import numpy as np
 
 from TaskStructure import TaskStructure
 from performance import PerformanceMetrics
-from data_collection import compute_average_performance
+from data_collection import default_datacollector
 
 
 class BlankAgent(Agent):
@@ -22,9 +16,10 @@ class BlankAgent(Agent):
 
 
 class InteractionModel(Model):
-    '''A model to model the interaction betwen agents'''
+    """A model to model the interaction between agents"""
 
-    def __init__(self, N, omega, w, alpha, beta):
+    def __init__(self, N, omega, w, alpha, beta, datacollector = None):
+        self.check_inputs(N,omega,w,alpha,beta)
         # Instantiate the model parameters
         self.num_agents, self.omega, self.w, self.alpha, self.beta = (N, omega, w, alpha, beta)
 
@@ -34,10 +29,16 @@ class InteractionModel(Model):
 
         self.running = True
         self.schedule = RandomActivation(self)
-        self.schedule.add(BlankAgent(1, self))
 
-        self.datacollector = DataCollector(model_reporters={"AP": compute_average_performance},
-                                           agent_reporters={"idc": "idc"})
+        self.datacollector = default_datacollector() if datacollector is None else datacollector
+
+    def check_inputs(self, N, omega, w, alpha, beta):
+        assert N > 1
+        assert (omega >= 0.5) & (omega <= 1)
+        assert (w >= 0) & (w <= 1)
+        assert (alpha >= 0) & (alpha <= 1)
+        assert (beta >= 0) & (beta <= 1)
+
 
     def new_project(self):
         self.task_structure.reset_task_matrix()
@@ -60,8 +61,8 @@ class InteractionModel(Model):
         self.datacollector.collect(self)
         self.schedule.step()
 
-        # if self.schedule.steps % 50 == 0:
-        #     self.new_project()
+        if self.schedule.steps % 50 == 0:
+            self.new_project()
 
 
 

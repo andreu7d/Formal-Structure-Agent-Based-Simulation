@@ -6,5 +6,5 @@ def compute_average_performance(model):
                                                                          model.realized_matrix)
     return average_perf
 
-
-
+def default_datacollector():
+    return DataCollector(model_reporters={"AP": compute_average_performance})
